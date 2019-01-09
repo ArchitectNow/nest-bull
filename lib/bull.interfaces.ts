@@ -14,13 +14,32 @@ export interface BullOptionsFactory {
     createBullOptions(): Promise<BullModuleOptions> | BullModuleOptions;
 }
 
-export interface BullModuleAsyncOption {
+/**
+ * @property name Name for this Option. When use forRootAsync, you can omit "name" property on BullModuleOptions
+ * @example
+ * ```javascript
+ * BullModule.forRootAsync({
+ *     name: 'queueStore',
+ *     imports: [ConfigModule],
+ *     useFactory: async (configService: ConfigService) => ({
+ *          // name: '', omit this, the outer "name" will be used,
+ *          options: {...},
+ *          processors: [...],
+ *     }),
+ *     inject: [ConfigService],
+ * })
+ * ```
+ */
+export interface BullModuleAsyncOptionConfig {
     name?: string;
-    queueNames?: string[];
     useExisting?: Type<BullOptionsFactory>;
     useClass?: Type<BullOptionsFactory>;
     useFactory?: (...args: any[]) => Promise<BullModuleOptions> | BullModuleOptions;
     inject?: any[];
 }
 
-export type BullModuleAsyncOptions = (BullModuleAsyncOption | BullModuleAsyncOption[]) & Pick<ModuleMetadata, 'imports'>;
+export type BullModuleAsyncOption = BullModuleAsyncOptionConfig & Pick<ModuleMetadata, 'imports'>;
+
+export type BullModuleAsyncOptions =
+    BullModuleAsyncOptionConfig[]
+    & Pick<ModuleMetadata, 'imports'>;

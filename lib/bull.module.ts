@@ -1,7 +1,7 @@
 import {DynamicModule, Module} from '@nestjs/common';
 
 import {BullCoreModule} from './bull-core.module';
-import {BullModuleAsyncOptions, BullModuleOptions} from './bull.interfaces';
+import {BullModuleAsyncOption, BullModuleAsyncOptions, BullModuleOptions} from './bull.interfaces';
 import {createQueues} from './bull.utils';
 
 @Module({})
@@ -22,10 +22,10 @@ export class BullModule {
         };
     }
 
-    static forRootAsync(options: BullModuleAsyncOptions): DynamicModule {
+    static forRootAsync(options: BullModuleAsyncOption | BullModuleAsyncOptions): DynamicModule {
         return {
             module: BullModule,
-            imports: [BullCoreModule.forRootAsync(options)],
+            imports: [BullCoreModule.forRootAsync([].concat(options))],
         };
     }
 }

@@ -39,30 +39,4 @@ export function createQueues(options: BullModuleOptions[]): any[] {
     }));
 }
 
-export function createQueuesAsync(queueNames: string[], optionName: string) {
-    return queueNames.reduce((acc: any, cur: string) => {
-        acc = {
-            provide: getQueueToken(cur),
-            useFactory: async (bullModuleOptions: BullModuleOptions) => {
-                const queue: Queue = new Bull(cur, bullModuleOptions.options);
-                if (isArray(bullModuleOptions.processors)) {
-                    for (const processor of bullModuleOptions.processors) {
-                        if (isAdvancedProcessor(processor)) {
-                            const hasConcurrency = !!processor.concurrency;
-                            hasConcurrency
-                                ? queue.process(cur, processor.concurrency, processor.callback)
-                                : queue.process(cur, processor.callback);
-                        } else {
-                            queue.process(processor);
-                        }
-                    }
-                }
-                return queue;
-            },
-            inject: [getOptionToken(optionName)],
-        };
-        return acc;
-    }, {});
-}
-
 export const generateString = () => uuid();

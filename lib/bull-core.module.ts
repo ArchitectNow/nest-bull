@@ -1,8 +1,12 @@
 import {DynamicModule, Global, Logger, Module, Provider} from '@nestjs/common';
+import * as Bull from 'bull';
+import {Queue} from 'bull';
+import {isArray} from 'util';
 
 import {BULL_MODULE_ID, BULL_MODULE_OPTIONS} from './bull.constants';
 import {BullModuleAsyncOption, BullModuleAsyncOptions, BullModuleOptions, BullOptionsFactory} from './bull.interfaces';
-import {createQueues, createQueuesAsync, generateString, getOptionToken} from './bull.utils';
+import {isAdvancedProcessor} from './bull.types';
+import {createQueues, generateString, getOptionToken, getQueueToken} from './bull.utils';
 
 @Global()
 @Module({})
@@ -24,7 +28,7 @@ export class BullCoreModule {
 
     static forRootAsync(options: BullModuleAsyncOptions): DynamicModule {
         const asyncProviders = this.createAsyncProviders(options);
-        const queueProviders = options.map((option) => createQueuesAsync(option.queueNames, option.name));
+        const queueProviders = this.createAsyncQueueProviders(options);
 
         return {
             module: BullCoreModule,
@@ -68,5 +72,28 @@ export class BullCoreModule {
             },
             inject: [options.useExisting || options.useClass],
         };
+    }
+
+    private static createAsyncQueueProviders(options: BullModuleAsyncOptions): Provider[] {
+        return options.map((option) => ({
+            provide: getQueueToken(option.name),
+            useFactory: async (bullModuleOptions: BullModuleOptions) => {
+                const queue: Queue = new Bull(option.name, bullModuleOptions.options);
+                if (isArray(bullModuleOptions.processors)) {
+                    for (const processor of bullModuleOptions.processors) {
+                        if (isAdvancedProcessor(processor)) {
+                            const hasConcurrency = !!processor.concurrency;
+                            hasConcurrency
+                                ? queue.process(processor.name, processor.concurrency, processor.callback)
+                                : queue.process(processor.name, processor.callback);
+                        } else {
+                            queue.process(processor);
+                        }
+                    }
+                }
+                return queue;
+            },
+            inject: [getOptionToken(option.name)],
+        }));
     }
 }
