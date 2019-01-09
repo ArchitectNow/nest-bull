@@ -89,14 +89,14 @@ export class BullCoreModule {
   private static createAsyncOptionsProvider(options: BullModuleAsyncOptions): Provider {
     if (options.useFactory) {
       return {
-        provide: 'BULL_MODULE_OPTIONS',
+        provide: BULL_MODULE_OPTIONS,
         useFactory: options.useFactory,
         inject: options.inject || [],
       }
     }
 
     return {
-      provide: 'BULL_MODULE_OPTIONS',
+      provide: BULL_MODULE_OPTIONS,
       useFactory: async (optionsFactory: BullOptionsFactory) => {
         Logger.log(optionsFactory)
         optionsFactory.createBullOptions()
