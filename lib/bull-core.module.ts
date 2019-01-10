@@ -4,7 +4,7 @@ import {Queue} from 'bull';
 import {isArray} from 'util';
 
 import {BULL_MODULE_ID, BULL_MODULE_OPTIONS} from './bull.constants';
-import {BullModuleAsyncOption, BullModuleAsyncOptions, BullModuleOptions, BullOptionsFactory} from './bull.interfaces';
+import {BullModuleAsyncOption, BullModuleOptions, BullOptionsFactory} from './bull.interfaces';
 import {isAdvancedProcessor} from './bull.types';
 import {createQueues, generateString, getOptionToken, getQueueToken} from './bull.utils';
 
@@ -26,13 +26,15 @@ export class BullCoreModule {
         };
     }
 
-    static forRootAsync(options: BullModuleAsyncOptions): DynamicModule {
+    static forRootAsync(options: BullModuleAsyncOption[]): DynamicModule {
         const asyncProviders = this.createAsyncProviders(options);
         const queueProviders = this.createAsyncQueueProviders(options);
 
+        const moduleImports = [].concat(...options.map((opt) => opt.imports));
+
         return {
             module: BullCoreModule,
-            imports: options.imports,
+            imports: [...new Set(moduleImports)],
             providers: [
                 ...asyncProviders,
                 ...queueProviders,
@@ -45,7 +47,7 @@ export class BullCoreModule {
         };
     }
 
-    private static createAsyncProviders(options: BullModuleAsyncOptions): Provider[] {
+    private static createAsyncProviders(options: BullModuleAsyncOption[]): Provider[] {
         return options.map((option) => {
             if (option.useExisting || option.useFactory) {
                 return this.createAsyncOptionsProvider(option);
@@ -55,26 +57,26 @@ export class BullCoreModule {
         });
     }
 
-    private static createAsyncOptionsProvider(options: BullModuleAsyncOption): Provider {
-        if (options.useFactory) {
+    private static createAsyncOptionsProvider(option: BullModuleAsyncOption): Provider {
+        if (option.useFactory) {
             return {
-                provide: getOptionToken(options.name),
-                useFactory: options.useFactory,
-                inject: options.inject || [],
+                provide: getOptionToken(option.name),
+                useFactory: option.useFactory,
+                inject: option.inject || [],
             };
         }
 
         return {
-            provide: getOptionToken(options.name),
+            provide: getOptionToken(option.name),
             useFactory: async (optionsFactory: BullOptionsFactory) => {
                 Logger.log(optionsFactory);
                 await optionsFactory.createBullOptions();
             },
-            inject: [options.useExisting || options.useClass],
+            inject: [option.useExisting || option.useClass],
         };
     }
 
-    private static createAsyncQueueProviders(options: BullModuleAsyncOptions): Provider[] {
+    private static createAsyncQueueProviders(options: BullModuleAsyncOption[]): Provider[] {
         return options.map((option) => ({
             provide: getQueueToken(option.name),
             useFactory: async (bullModuleOptions: BullModuleOptions) => {

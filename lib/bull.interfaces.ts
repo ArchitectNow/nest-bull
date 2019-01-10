@@ -30,16 +30,10 @@ export interface BullOptionsFactory {
  * })
  * ```
  */
-export interface BullModuleAsyncOptionConfig {
+export interface BullModuleAsyncOption extends Pick<ModuleMetadata, 'imports'> {
     name?: string;
     useExisting?: Type<BullOptionsFactory>;
     useClass?: Type<BullOptionsFactory>;
     useFactory?: (...args: any[]) => Promise<BullModuleOptions> | BullModuleOptions;
     inject?: any[];
 }
-
-export type BullModuleAsyncOption = BullModuleAsyncOptionConfig & Pick<ModuleMetadata, 'imports'>;
-
-export type BullModuleAsyncOptions =
-    BullModuleAsyncOptionConfig[]
-    & Pick<ModuleMetadata, 'imports'>;
