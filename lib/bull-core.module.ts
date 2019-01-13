@@ -1,4 +1,4 @@
-import {DynamicModule, Global, Logger, Module, Provider} from '@nestjs/common';
+import {DynamicModule, Global, Logger, Module, Provider, Type} from '@nestjs/common';
 import * as Bull from 'bull';
 import {Queue} from 'bull';
 import {isArray} from 'util';
@@ -30,11 +30,21 @@ export class BullCoreModule {
         const asyncProviders = this.createAsyncProviders(options);
         const queueProviders = this.createAsyncQueueProviders(options);
 
-        const moduleImports = [].concat(...options.map((opt) => opt.imports));
+        /**
+         * This is a concatenation of all imports flatten.
+         * E.g: [ConfigModule, ConfigModule] if both options have ConfigModule imported.
+         * However, we're going to need this Array to be unique as well. In ES6, there's Set
+         * that we can use to construct an unique Array.
+         *
+         * Set takes an array as an argument. To convert Set back to Array, use Spread syntax or Array.from()
+         * Type is persisted throughout.
+         */
+        const moduleImports = this.createModuleImports(options);
+        const uniqModuleImports = [...new Set(moduleImports)];
 
         return {
             module: BullCoreModule,
-            imports: [...new Set(moduleImports)],
+            imports: uniqModuleImports,
             providers: [
                 ...asyncProviders,
                 ...queueProviders,
@@ -45,6 +55,10 @@ export class BullCoreModule {
             ],
             exports: [...queueProviders],
         };
+    }
+
+    private static createModuleImports(options: BullModuleAsyncOption[]): Type<any>[] {
+        return [].concat.apply([], options.map((opt) => opt.imports));
     }
 
     private static createAsyncProviders(options: BullModuleAsyncOption[]): Provider[] {
