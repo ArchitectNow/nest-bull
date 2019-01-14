@@ -98,10 +98,13 @@ export class BullCoreModule {
                 if (isArray(bullModuleOptions.processors)) {
                     for (const processor of bullModuleOptions.processors) {
                         if (isAdvancedProcessor(processor)) {
-                            const hasConcurrency = !!processor.concurrency;
-                            hasConcurrency
-                                ? queue.process(processor.name, processor.concurrency, processor.callback)
-                                : queue.process(processor.name, processor.callback);
+                            const {name, concurrency, callback} = processor;
+                            !!name && !!concurrency
+                                ? queue.process(name, concurrency, callback)
+                                : !!name
+                                    ? queue.process(name, callback)
+                                    : queue.process(concurrency, callback);
+
                         } else {
                             queue.process(processor);
                         }
